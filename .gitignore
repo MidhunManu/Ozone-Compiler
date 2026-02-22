@@ -1,0 +1,44 @@
+# ===== Build artifacts =====
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# ===== Binaries =====
+ozone
+*.out
+*.exe
+
+# ===== Object / intermediate files =====
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.d
+
+# ===== Debug / profiling =====
+*.log
+*.prof
+*.gcda
+*.gcno
+*.gcov
+
+# ===== macOS specific =====
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ===== Editor / IDE =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===== NASM =====
+*.lst
+*.bin
