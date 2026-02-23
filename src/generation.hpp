@@ -29,7 +29,7 @@ public:
 																}
 																const auto& var = gen->m_vars.at(expr_indent.ident.value.value());
 																std::stringstream offset;
-																offset << "QWORD [rsp + " << (gen->m_stack_size - var.stack_location - 1) * 4 << "]\n";
+																offset << "QWORD [rsp + " << (gen->m_stack_size - var.stack_location - 1) * 8 << "]\n";
 																gen->push(offset.str());
 												}
 								};
