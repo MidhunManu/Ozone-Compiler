@@ -76,12 +76,12 @@ public:
 																continue;
 												}
 												else if (peek().value() == ';') {
-																buffer.push_back(consume());
+																consume();
 																tokens.push_back({.type = TokenType::semi });
 																continue;
 												}
 												else if (peek().value() == '=') {
-																buffer.push_back(consume());
+																consume();
 																tokens.push_back({.type = TokenType::eq });
 																continue;
 												}

@@ -1,9 +1,13 @@
 #pragma once
 
 #include "parser.hpp"
+#include <cstdlib>
+#include <iostream>
 #include <string>
 #include <sstream>
+#include <unordered_map>
 #include <variant>
+#include <algorithm>
 
 class Generator {
 public:
@@ -15,11 +19,18 @@ public:
 												
 												void operator() (const ExprNodeIntLit& expr_int_lit) const {
 																gen->m_output << "    mov rax, " << expr_int_lit.int_lit.value.value() << "\n";
-																gen->m_output << "    push rax\n";
+																gen->push("rax");
 												}
 
-												void operator() (const ExprNodeIdent& expr_indent) const {
-																// TODO
+												void operator() (const ExprNodeIdent& expr_indent) {
+																if(!gen->m_vars.contains(expr_indent.ident.value.value())) {
+																				std::cerr << "Undeclared Identifier `" << expr_indent.ident.value.value() << "`\n";
+																				exit(EXIT_FAILURE);
+																}
+																const auto& var = gen->m_vars.at(expr_indent.ident.value.value());
+																std::stringstream offset;
+																offset << "QWORD [rsp + " << (gen->m_stack_size - var.stack_location) * 4 << "]\n";
+																gen->push(offset.str());
 												}
 								};
 
@@ -34,12 +45,26 @@ public:
 																gen->gen_expr(stmt_exit.expr);
 																gen->m_output << "    mov rax, 60\n";
 																
-																gen->m_output << "    pop rdi\n";
+																gen->pop("rdi");
 																gen->m_output << "    syscall\n";
 												}
 
 												void operator()(const StmtNodeLet& stmt_let) {
+																// not an error, cuz linter is at c++17 tho cmake is at c++20
+																if(gen->m_vars.contains(stmt_let.ident.value.value())) {
+																				std::cerr << "Identifier already used : "
+																								  << stmt_let.ident.value.value()
+																									<< std::endl;
 
+																				exit(EXIT_FAILURE);
+																}
+
+																gen->m_vars.insert({
+																												stmt_let.ident.value.value(),
+																												Var { .stack_location = gen->m_stack_size }
+																								});
+
+																gen->gen_expr(stmt_let.expr);
 												}
 								};
 
@@ -68,7 +93,23 @@ public:
 				}
 
 private:
+				inline void push(const std::string& reg) {
+								m_output << "    push " << reg << "\n";
+								m_stack_size++;
+				}
+
+				inline void pop(const std::string& reg) {
+								m_output << "    pop " << reg << "\n";
+								m_stack_size--;
+				}
+
+				struct Var {
+								size_t stack_location;
+				};
+
 				const ProgNode m_prog;
 				std::stringstream m_output;
+				size_t m_stack_size = 0;
+				std::unordered_map<std::string, Var> m_vars {};
 };
 
