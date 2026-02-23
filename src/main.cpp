@@ -32,17 +32,17 @@ int main(int argc, char* argv[]) {
 				Tokenizer tokenizer(std::move(contents));
 				std::vector<Token> tokens = tokenizer.tokenize();
 				Parser parser(std::move(tokens));
-				std::optional<ExitNode> tree = parser.parse();
+				std::optional<ProgNode> prog = parser.parse_prog();
 
-				if (!tree.has_value()) {
-								std::cerr << "No Statement Found" << std::endl;
+				if (!prog.has_value()) {
+								std::cerr << "Invalid Program" << std::endl;
 								exit(EXIT_FAILURE);
 				}
 
-				Generator generator(tree.value());
+				Generator generator(prog.value());
 				{
 								std::fstream asm_file("out.s", std::ios::out);
-								asm_file << generator.generate();
+								asm_file << generator.gen_prog();
 
 				}
 
