@@ -11,7 +11,9 @@
 enum class TokenType {
 				exit,
 				int_lit,
-				semi
+				semi,
+				open_paren,
+				close_paren
 };
 
 struct Token {
@@ -49,6 +51,18 @@ public:
 																				buffer.push_back(consume());
 																}
 																tokens.push_back({.type = TokenType::int_lit, .value = buffer});
+																buffer.clear();
+																continue;
+												}
+												else if (peek().value() == '(') {
+																buffer.push_back(consume());
+																tokens.push_back({.type = TokenType::open_paren });
+																buffer.clear();
+																continue;
+												}
+												else if (peek().value() == ')') {
+																buffer.push_back(consume());
+																tokens.push_back({.type = TokenType::close_paren});
 																buffer.clear();
 																continue;
 												}
