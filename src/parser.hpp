@@ -54,15 +54,23 @@ public:
 				*/
 				std::optional<ExitNode> parse() {
 
-								if (!peek().has_value() || peek()->type != TokenType::exit) {
+								if (!peek().has_value() || peek()->type != TokenType::exit 
+								    && peek(1).value().type == TokenType::open_paren) {
 												return {};
 								}
 
 								consume(); // consume 'exit'
+								consume();
 
 								auto expr = parse_expr();
 								if (!expr.has_value()) {
 												std::cerr << "Invalid Expression\n";
+												exit(EXIT_FAILURE);
+								}
+								if (peek().has_value() && peek().value().type == TokenType::close_paren) {
+												consume();
+								} else {
+												std::cerr << "close parenthesis expected" << std::endl;
 												exit(EXIT_FAILURE);
 								}
 
