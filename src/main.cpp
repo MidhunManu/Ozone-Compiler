@@ -10,25 +10,9 @@
 #include <vector>
 
 #include "tokenization.hpp"
+#include "parser.hpp"
+#include "generation.hpp"
 
-
-std::string tokens_to_asm(const std::vector<Token>& tokens) {
-				std::stringstream output;
-				output << "global _start\n_start:\n";
-				for(int i = 0; i < tokens.size(); i++) {
-								const Token& token = tokens.at(i);
-								if(token.type == TokenType::exit)  {
-												if (i + 1 < tokens.size() && tokens.at(i + 1).type == TokenType::int_lit) {
-																if (i + 2 < tokens.size() && tokens.at(i + 2).type == TokenType::semi) {
-																				output << "    mov rax, 60\n";
-																				output << "    mov rdi, " << tokens.at(i + 1).value.value() << "\n";
-																				output << "    syscall\n";
-																}
-												}
-								}
-				}
-				return output.str();
-}
 
 int main(int argc, char* argv[]) {
 				if (argc < 2) {
@@ -46,9 +30,19 @@ int main(int argc, char* argv[]) {
 				}
 
 				Tokenizer tokenizer(std::move(contents));
+				std::vector<Token> tokens = tokenizer.tokenize();
+				Parser parser(std::move(tokens));
+				std::optional<ExitNode> tree = parser.parse();
+
+				if (!tree.has_value()) {
+								std::cerr << "No Statement Found" << std::endl;
+								exit(EXIT_FAILURE);
+				}
+
+				Generator generator(tree.value());
 				{
 								std::fstream asm_file("out.s", std::ios::out);
-								asm_file << tokens_to_asm(tokenizer.tokenize());
+								asm_file << generator.generate();
 
 				}
 

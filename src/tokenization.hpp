@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cctype>
+#include <cstddef>
 #include <cstdlib>
 #include <iostream>
 #include <optional>
@@ -70,7 +71,7 @@ public:
 				}
 
 private:
-				std::optional<char> peek(int ahead = 0) const {
+				inline std::optional<char> peek(int ahead = 0) const {
 								if (m_index + ahead >= m_src.length()) {
 												return {};
 								} else {
@@ -78,10 +79,10 @@ private:
 								}
 				}
 
-				char consume() {
+				inline char consume() {
 								return m_src.at(m_index++);
 				}
 
 				const std::string m_src;
-				int m_index = 0;
+				size_t m_index = 0;
 };
