@@ -1,3 +1,4 @@
 let x = 7;
 let y = x;
+print(12);
 exit(x);

@@ -7,7 +7,6 @@
 #include <sstream>
 #include <unordered_map>
 #include <variant>
-#include <algorithm>
 
 class Generator {
 public:
@@ -32,6 +31,8 @@ public:
 																offset << "QWORD [rsp + " << (gen->m_stack_size - var.stack_location - 1) * 8 << "]\n";
 																gen->push(offset.str());
 												}
+
+												
 								};
 
 								ExprVisitor visitor({ .gen = this });
@@ -51,7 +52,8 @@ public:
 
 												void operator()(const StmtNodeLet& stmt_let) {
 																// not an error, cuz linter is at c++17 tho cmake is at c++20
-																if(gen->m_vars.contains(stmt_let.ident.value.value())) {
+																const auto name = stmt_let.ident.value.value();
+																if(gen->m_vars.contains(name)) {
 																				std::cerr << "Identifier already used : "
 																								  << stmt_let.ident.value.value()
 																									<< std::endl;
@@ -59,12 +61,32 @@ public:
 																				exit(EXIT_FAILURE);
 																}
 
+																gen->gen_expr(stmt_let.expr);
+																gen->m_vars.insert({
+																								name,
+																								Var { .stack_location = gen->m_stack_size - 1 }
+																});
+																/*
 																gen->m_vars.insert({
 																												stmt_let.ident.value.value(),
 																												Var { .stack_location = gen->m_stack_size }
 																								});
 
 																gen->gen_expr(stmt_let.expr);
+																*/
+												}
+
+												void operator()(const StmtNodePrint& stmt_print) const {
+																gen->gen_expr(stmt_print.expr);
+
+																gen->m_output << "    mov rax, 1\n";
+																gen->m_output << "    mov rdi, 1\n";
+																gen->m_output << "    mov rsi, rsp\n";
+																gen->m_output << "    mov rdx, 1\n";
+																gen->m_output << "    syscall\n";
+
+																// flush out printed value, no one wants to see that in stack
+																gen->pop("rax");
 												}
 								};
 
