@@ -4,10 +4,10 @@ _start:
     push rax
     push QWORD [rsp + 0]
 
-    mov rax, 23
-    push rax
-    mov rax, 23
-    push rax
+    push QWORD [rsp + 8]
+
+    push QWORD [rsp + 16]
+
     pop rdi
     call print_u64
     push QWORD [rsp + 16]

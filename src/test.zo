@@ -1,4 +1,4 @@
 let x = 7;
 let y = x;
-print(23);
+print(x);
 exit(x);
