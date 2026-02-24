@@ -7,7 +7,6 @@
 #include <sstream>
 #include <unordered_map>
 #include <variant>
-#include <algorithm>
 
 class Generator {
 public:
@@ -32,6 +31,8 @@ public:
 																offset << "QWORD [rsp + " << (gen->m_stack_size - var.stack_location - 1) * 8 << "]\n";
 																gen->push(offset.str());
 												}
+
+												
 								};
 
 								ExprVisitor visitor({ .gen = this });
@@ -51,7 +52,8 @@ public:
 
 												void operator()(const StmtNodeLet& stmt_let) {
 																// not an error, cuz linter is at c++17 tho cmake is at c++20
-																if(gen->m_vars.contains(stmt_let.ident.value.value())) {
+																const auto name = stmt_let.ident.value.value();
+																if(gen->m_vars.contains(name)) {
 																				std::cerr << "Identifier already used : "
 																								  << stmt_let.ident.value.value()
 																									<< std::endl;
@@ -59,12 +61,27 @@ public:
 																				exit(EXIT_FAILURE);
 																}
 
+																gen->gen_expr(stmt_let.expr);
+																gen->m_vars.insert({
+																								name,
+																								Var { .stack_location = gen->m_stack_size - 1 }
+																});
+																/*
 																gen->m_vars.insert({
 																												stmt_let.ident.value.value(),
 																												Var { .stack_location = gen->m_stack_size }
 																								});
 
 																gen->gen_expr(stmt_let.expr);
+																*/
+												}
+
+												void operator()(const StmtNodePrint& stmt_print) const {
+																gen->gen_expr(stmt_print.expr);
+																gen->gen_expr(stmt_print.expr);
+																gen->pop("rdi");
+																gen->m_output << "    call print_u64\n";
+
 												}
 								};
 
@@ -89,6 +106,7 @@ public:
 								m_output << "    syscall\n";
 
 
+								m_output << run_time_print();
 								return m_output.str();
 				}
 
@@ -111,5 +129,48 @@ private:
 				std::stringstream m_output;
 				size_t m_stack_size = 0;
 				std::unordered_map<std::string, Var> m_vars {};
+
+				static std::string run_time_print() {
+								std::stringstream ss;
+
+								ss << "    default rel\n";
+								ss << "    section .data\n";
+								ss << "    print_buf: times 32 db 0\n";
+								ss << "\n";
+								ss << "    section .text\n";
+								ss << "    print_u64:\n";
+								ss << "        lea rsi, [print_buf + 31]\n";
+								ss << "        xor rcx, rcx\n";
+								ss << "\n";
+								ss << "        mov rax, rdi\n";
+								ss << "        cmp rax, 0\n";
+								ss << "        jne .loop\n";
+								ss << "\n";
+								ss << "        mov byte [rsi], '0'\n";
+								ss << "        mov rcx, 1\n";
+								ss << "        jmp .write\n";
+								ss << "\n";
+								ss << "    .loop:\n";
+								ss << "        xor rdx, rdx\n";
+								ss << "        mov rbx, 10\n";
+								ss << "        div rbx\n";
+								ss << "        add dl, '0'\n";
+								ss << "        mov [rsi], dl\n";
+								ss << "        dec rsi\n";
+								ss << "        inc rcx\n";
+								ss << "        test rax, rax\n";
+								ss << "        jne .loop\n";
+								ss << "\n";
+								ss << "        inc rsi\n";
+								ss << "\n";
+								ss << "    .write:\n";
+								ss << "        mov rax, 1\n";
+								ss << "        mov rdi, 1\n";
+								ss << "        mov rdx, rcx\n";
+								ss << "        syscall\n";
+								ss << "        ret\n";
+
+								return ss.str();
+				}
 };
 

@@ -16,7 +16,8 @@ enum class TokenType {
 				close_paren,
 				ident,
 				let,
-				eq
+				eq,
+				print
 };
 
 struct Token {
@@ -46,6 +47,11 @@ public:
 																}
 																else if (buffer == "let") {
 																				tokens.push_back({ .type = TokenType::let });
+																				buffer.clear();
+																				continue;
+																} 
+																else if (buffer == "print") {
+																				tokens.push_back({ .type = TokenType::print });
 																				buffer.clear();
 																				continue;
 																} else {

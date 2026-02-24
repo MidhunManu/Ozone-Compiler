@@ -28,8 +28,13 @@ struct StmtNodeLet {
 				ExprNode expr;
 };
 
+
+struct StmtNodePrint {
+				ExprNode expr;
+};
+
 struct StmtNode {
-				std::variant<StmtNodeExit, StmtNodeLet> var;
+				std::variant<StmtNodeExit, StmtNodeLet, StmtNodePrint> var;
 };
 
 struct ProgNode {
@@ -88,6 +93,36 @@ public:
 												}
 
 												return StmtNode{ .var = stmt_exit };
+								}
+								else if (peek().has_value() && peek()->type == TokenType::print
+																&& peek(1).has_value() && peek(1)->type == TokenType::open_paren) {
+												consume();
+												consume();
+
+												StmtNodePrint stmt_print;
+
+												if (auto node_expr = parse_expr()) {
+																stmt_print.expr = node_expr.value();
+												} else {
+																std::cerr << "Invalid Expression" << std::endl;
+																exit(EXIT_FAILURE);
+												}
+
+												if (peek().has_value() && peek()->type == TokenType::close_paren) {
+																consume();
+												} else {
+																std::cerr << "Expected `)`" << std::endl;
+																exit(EXIT_FAILURE);
+												}
+
+												if (peek().has_value() && peek()->type == TokenType::semi) {
+																consume();
+												} else {
+																std::cerr << "Expected `;`" << std::endl;
+												}
+
+												return StmtNode{ .var = stmt_print };
+
 								}
 								else if(peek().has_value() && peek().value().type == TokenType::let
 																&& peek(1).has_value() && peek(1).value().type == TokenType::ident
