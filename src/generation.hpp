@@ -78,15 +78,10 @@ public:
 
 												void operator()(const StmtNodePrint& stmt_print) const {
 																gen->gen_expr(stmt_print.expr);
+																gen->gen_expr(stmt_print.expr);
+																gen->pop("rdi");
+																gen->m_output << "    call print_u64\n";
 
-																gen->m_output << "    mov rax, 1\n";
-																gen->m_output << "    mov rdi, 1\n";
-																gen->m_output << "    mov rsi, rsp\n";
-																gen->m_output << "    mov rdx, 1\n";
-																gen->m_output << "    syscall\n";
-
-																// flush out printed value, no one wants to see that in stack
-																gen->pop("rax");
 												}
 								};
 
@@ -111,6 +106,7 @@ public:
 								m_output << "    syscall\n";
 
 
+								m_output << run_time_print();
 								return m_output.str();
 				}
 
@@ -133,5 +129,48 @@ private:
 				std::stringstream m_output;
 				size_t m_stack_size = 0;
 				std::unordered_map<std::string, Var> m_vars {};
+
+				static std::string run_time_print() {
+								std::stringstream ss;
+
+								ss << "    default rel\n";
+								ss << "    section .data\n";
+								ss << "    print_buf: times 32 db 0\n";
+								ss << "\n";
+								ss << "    section .text\n";
+								ss << "    print_u64:\n";
+								ss << "        lea rsi, [print_buf + 31]\n";
+								ss << "        xor rcx, rcx\n";
+								ss << "\n";
+								ss << "        mov rax, rdi\n";
+								ss << "        cmp rax, 0\n";
+								ss << "        jne .loop\n";
+								ss << "\n";
+								ss << "        mov byte [rsi], '0'\n";
+								ss << "        mov rcx, 1\n";
+								ss << "        jmp .write\n";
+								ss << "\n";
+								ss << "    .loop:\n";
+								ss << "        xor rdx, rdx\n";
+								ss << "        mov rbx, 10\n";
+								ss << "        div rbx\n";
+								ss << "        add dl, '0'\n";
+								ss << "        mov [rsi], dl\n";
+								ss << "        dec rsi\n";
+								ss << "        inc rcx\n";
+								ss << "        test rax, rax\n";
+								ss << "        jne .loop\n";
+								ss << "\n";
+								ss << "        inc rsi\n";
+								ss << "\n";
+								ss << "    .write:\n";
+								ss << "        mov rax, 1\n";
+								ss << "        mov rdi, 1\n";
+								ss << "        mov rdx, rcx\n";
+								ss << "        syscall\n";
+								ss << "        ret\n";
+
+								return ss.str();
+				}
 };
 
