@@ -2,6 +2,7 @@
 
 #include "arena.hpp"
 #include "tokenization.hpp"
+#include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <optional>
@@ -11,16 +12,20 @@
 
 struct NodeBinExpr;
 
-struct ExprNodeIntLit {
+struct NodeTermIntLit {
 				Token int_lit;
 };
 
-struct ExprNodeIdent {
+struct NodeTermIdent {
 				Token ident;
 };
 
+struct NodeTerm {
+				std::variant<NodeTermIntLit*, NodeTermIdent*> var;
+};
+
 struct ExprNode {
-				std::variant<ExprNodeIntLit*, ExprNodeIdent*, NodeBinExpr*> var;
+				std::variant<NodeTerm*, NodeBinExpr*> var;
 };
 
 struct StmtNodeExit {
@@ -45,21 +50,24 @@ struct BinExprAdd {
 				ExprNode* rhs;
 };
 
+/*
 struct BinExprMul {
 				ExprNode* lhs;
 				ExprNode* rhs;
 };
+*/
 
 struct NodeBinExpr {
-				std::variant<BinExprAdd*, BinExprMul*> var;
+				// std::variant<BinExprAdd*, BinExprMul*> var;
+				BinExprAdd* add;
 };
 
 
 /*
-struct ExitNode {
-				ExprNode expr;
-};
-*/
+	 struct ExitNode {
+	 ExprNode expr;
+	 };
+	 */
 
 
 class Parser {
@@ -69,26 +77,67 @@ public:
 								m_allocator(1024 * 1024 * 4)
 								{} 
 
+				/*
+					 std::optional<NodeBinExpr*> parse_bin_expr() {
+				// TODO: implment adddition fix for RHS.
+				if (auto lhs = parse_expr()) {
+				}
+				} else {
+				std::cerr << "unsupported operator" << std::endl;
+				exit(EXIT_FAILURE);
+				}
+				return {};
+				}
+				*/
+
+				std::optional<NodeTerm*> parse_term() {
+								if (peek().has_value() && peek().value().type == TokenType::int_lit) {
+												auto term_int_literal = m_allocator.alloc<NodeTermIntLit>();
+												term_int_literal->int_lit = consume();
+												auto term = m_allocator.alloc<NodeTerm>();
+												term->var = term_int_literal;
+												return term;
+								}
+								else if (peek().has_value() && peek().value().type == TokenType::ident) {
+												auto expr_ident = m_allocator.alloc<NodeTermIdent>();
+												expr_ident->ident = consume();
+												auto term = m_allocator.alloc<NodeTerm>();
+												term->var = expr_ident;
+												return term;
+								} else {
+												return {};
+								}
+				}
 
 				std::optional<ExprNode*> parse_expr() {
-							if (peek().has_value() && peek().value().type == TokenType::int_lit) {
-											auto expr_lit = m_allocator.alloc<ExprNodeIntLit>();
-											expr_lit->int_lit = consume();
-											auto expr = m_allocator.alloc<ExprNode>();
-											expr->var = expr_lit;
-											return expr;
-							}
-							else if (peek().has_value() && peek().value().type == TokenType::ident) {
-											auto expr_ident = m_allocator.alloc<ExprNodeIdent>();
-											expr_ident->ident = consume();
-											auto expr = m_allocator.alloc<ExprNode>();
-											expr->var = expr_ident;
-											return expr;
-							}
-							else {
-											return {};
-							}
-				}
+								if (auto term = parse_term()) {
+												if (peek().has_value() && peek().value().type == TokenType::plus) {
+																auto bin_expr = m_allocator.alloc<NodeBinExpr>();
+																auto bin_expr_add = m_allocator.alloc<BinExprAdd>();
+																auto lhs_expr = m_allocator.alloc<ExprNode>();
+																lhs_expr->var = term.value();
+																bin_expr_add->lhs = lhs_expr;
+
+																consume();
+																if (auto rhs = parse_expr()) {
+																				bin_expr_add->rhs = rhs.value();
+																				bin_expr->add = bin_expr_add;
+																				auto expr = m_allocator.alloc<ExprNode>();
+																				expr->var = bin_expr;
+																				return expr;
+																} else {
+																				std::cout << "expected expression" << std::endl;
+																				exit(EXIT_FAILURE);
+																}
+												} else {
+																auto expr = m_allocator.alloc<ExprNode>();
+																expr->var = term.value();
+																return expr;
+												}
+								} else {
+												return {};
+								}
+				}	
 
 				std::optional<StmtNode*> parse_stmt() {
 								if (peek().has_value() && peek()->type == TokenType::exit &&
@@ -152,8 +201,12 @@ public:
 												return stmt;
 								}
 
-								return {};
+
+								else {
+												return {};
+								}
 				}
+
 				std::optional<ProgNode> parse_prog() {
 								ProgNode prog;
 								while (peek().has_value()) {
@@ -168,18 +221,18 @@ public:
 				}
 
 private: 
-				inline std::optional<Token> peek(int ahead = 0) const {
-								if (m_index + ahead >= m_tokens.size()) {
-												return {};
-								} else {
-												return m_tokens.at(m_index + ahead);
-								}
+inline std::optional<Token> peek(int ahead = 0) const {
+				if (m_index + ahead >= m_tokens.size()) {
+								return {};
+				} else {
+								return m_tokens.at(m_index + ahead);
 				}
+}
 
-				inline Token consume() {
-								return m_tokens.at(m_index++);
-				}
-				const std::vector<Token> m_tokens;
-				size_t m_index = 0;
-				ArenaAllocator m_allocator;
+inline Token consume() {
+				return m_tokens.at(m_index++);
+}
+const std::vector<Token> m_tokens;
+size_t m_index = 0;
+ArenaAllocator m_allocator;
 };

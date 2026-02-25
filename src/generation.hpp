@@ -13,28 +13,47 @@ class Generator {
 public:
 				inline explicit Generator(ProgNode prog): m_prog(std::move(prog)) {}
 
+				void genTerm(const NodeTerm* term) {
+								struct TermVisitor {
+												Generator* gen;
+												void operator() (const NodeTermIntLit* term_int_lit) const {
+																gen->m_output << "    mov rax, " << term_int_lit->int_lit.value.value() << "\n";
+																gen->push("rax");
+
+												}
+
+												void operator() (const NodeTermIdent* term_int_inden) const {
+																if(!gen->m_vars.contains(term_int_inden->ident.value.value())) {
+																				std::cerr << "Undeclared Identifier `" << term_int_inden->ident.value.value() << "`\n";
+																				exit(EXIT_FAILURE);
+																}
+																const auto& var = gen->m_vars.at(term_int_inden->ident.value.value());
+																std::stringstream offset;
+																offset << "QWORD [rsp + " << (gen->m_stack_size - var.stack_location - 1) * 8 << "]\n";
+																gen->push(offset.str());
+
+												}
+								};
+
+								TermVisitor visitor({.gen = this});
+								std::visit(visitor, term->var);
+				}
+
 				void gen_expr(const ExprNode* expr) {
 								struct ExprVisitor {
 												Generator* gen;
 												
-												void operator() (const ExprNodeIntLit* expr_int_lit) const {
-																gen->m_output << "    mov rax, " << expr_int_lit->int_lit.value.value() << "\n";
-																gen->push("rax");
-												}
-
-												void operator() (const ExprNodeIdent* expr_indent) {
-																if(!gen->m_vars.contains(expr_indent->ident.value.value())) {
-																				std::cerr << "Undeclared Identifier `" << expr_indent->ident.value.value() << "`\n";
-																				exit(EXIT_FAILURE);
-																}
-																const auto& var = gen->m_vars.at(expr_indent->ident.value.value());
-																std::stringstream offset;
-																offset << "QWORD [rsp + " << (gen->m_stack_size - var.stack_location - 1) * 8 << "]\n";
-																gen->push(offset.str());
+												void operator() (const NodeTerm* term) const {
+																gen->genTerm(term);
 												}
 
 												void operator() (const NodeBinExpr* bin_expr) const {
-																assert(false); // under development
+																gen->gen_expr(bin_expr->add->lhs);
+																gen->gen_expr(bin_expr->add->rhs);
+																gen->pop("rax");
+																gen->pop("rbx");
+																gen->m_output << "    add rax, rbx\n";
+																gen->push("rax");
 												}
 								};
 
