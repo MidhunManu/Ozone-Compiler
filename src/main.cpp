@@ -46,5 +46,9 @@ int main(int argc, char* argv[]) {
 
 				}
 
+				// assemble and link
+				system("nasm -f elf64 out.s");
+				system("ld -o a.out out.o");
+
 				return EXIT_SUCCESS;
 }
