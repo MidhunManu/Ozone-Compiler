@@ -1,70 +1,74 @@
 #pragma once
 
 #include "parser.hpp"
+#include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <string>
 #include <sstream>
 #include <unordered_map>
 #include <variant>
-#include <algorithm>
 
 class Generator {
 public:
 				inline explicit Generator(ProgNode prog): m_prog(std::move(prog)) {}
 
-				void gen_expr(const ExprNode& expr) {
+				void gen_expr(const ExprNode* expr) {
 								struct ExprVisitor {
 												Generator* gen;
 												
-												void operator() (const ExprNodeIntLit& expr_int_lit) const {
-																gen->m_output << "    mov rax, " << expr_int_lit.int_lit.value.value() << "\n";
+												void operator() (const ExprNodeIntLit* expr_int_lit) const {
+																gen->m_output << "    mov rax, " << expr_int_lit->int_lit.value.value() << "\n";
 																gen->push("rax");
 												}
 
-												void operator() (const ExprNodeIdent& expr_indent) {
-																if(!gen->m_vars.contains(expr_indent.ident.value.value())) {
-																				std::cerr << "Undeclared Identifier `" << expr_indent.ident.value.value() << "`\n";
+												void operator() (const ExprNodeIdent* expr_indent) {
+																if(!gen->m_vars.contains(expr_indent->ident.value.value())) {
+																				std::cerr << "Undeclared Identifier `" << expr_indent->ident.value.value() << "`\n";
 																				exit(EXIT_FAILURE);
 																}
-																const auto& var = gen->m_vars.at(expr_indent.ident.value.value());
+																const auto& var = gen->m_vars.at(expr_indent->ident.value.value());
 																std::stringstream offset;
 																offset << "QWORD [rsp + " << (gen->m_stack_size - var.stack_location - 1) * 8 << "]\n";
 																gen->push(offset.str());
 												}
+
+												void operator() (const NodeBinExpr* bin_expr) const {
+																assert(false); // under development
+												}
 								};
 
 								ExprVisitor visitor({ .gen = this });
-								std::visit(visitor, expr.var);
+								std::visit(visitor, expr->var);
 				}
 
-				void gen_stmt(const StmtNode& stmt) {
+				void gen_stmt(const StmtNode* stmt) {
 								struct StmtVisitor {
 												Generator* gen;
-												void operator()(const StmtNodeExit& stmt_exit) const {
-																gen->gen_expr(stmt_exit.expr);
+												void operator()(const StmtNodeExit* stmt_exit) const {
+																gen->gen_expr(stmt_exit->expr);
 																gen->m_output << "    mov rax, 60\n";
 																
 																gen->pop("rdi");
 																gen->m_output << "    syscall\n";
 												}
 
-												void operator()(const StmtNodeLet& stmt_let) {
+												void operator()(const StmtNodeLet* stmt_let) {
 																// not an error, cuz linter is at c++17 tho cmake is at c++20
-																if(gen->m_vars.contains(stmt_let.ident.value.value())) {
+																if(gen->m_vars.contains(stmt_let->ident.value.value())) {
 																				std::cerr << "Identifier already used : "
-																								  << stmt_let.ident.value.value()
+																								  << stmt_let->ident.value.value()
 																									<< std::endl;
 
 																				exit(EXIT_FAILURE);
 																}
 
 																gen->m_vars.insert({
-																												stmt_let.ident.value.value(),
+																												stmt_let->ident.value.value(),
 																												Var { .stack_location = gen->m_stack_size }
 																								});
 
-																gen->gen_expr(stmt_let.expr);
+																gen->gen_expr(stmt_let->expr);
 												}
 								};
 
@@ -74,13 +78,13 @@ public:
 								*/
 								StmtVisitor visitor{};
 								visitor.gen = this;
-								std::visit(visitor, stmt.var);
+								std::visit(visitor, stmt->var);
 				}
 
 				[[nodiscard]] inline std::string gen_prog() {
 								m_output << "global _start\n_start:\n";
 								
-								for(const StmtNode& stmt: m_prog.statements) {
+								for(auto stmt: m_prog.statements) {
 												gen_stmt(stmt);	
 								}
 
