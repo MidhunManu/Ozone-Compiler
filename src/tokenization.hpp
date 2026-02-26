@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <optional>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -26,6 +27,37 @@ struct Token {
 				TokenType type;
 				std::optional<std::string> value;
 };
+
+/*
+inline bool is_bin_opr(TokenType type) {
+				switch (type) {
+								case TokenType::plus:
+												return true;
+
+								case TokenType::mul:
+												return true;
+
+								case TokenType::sub:
+												return true;
+
+
+								default:
+												return false;
+
+				}
+}
+*/
+
+std::optional<int> bin_prec(TokenType type) {
+				switch (type) {
+								case TokenType::plus:
+												return 0;
+								case TokenType::mul:
+												return 1;
+								default:
+												return {};
+				}
+}
 
 
 class Tokenizer {
@@ -116,6 +148,7 @@ public:
 								return tokens;
 				}
 
+				
 private:
 				inline std::optional<char> peek(int ahead = 0) const {
 								if (m_index + ahead >= m_src.length()) {
