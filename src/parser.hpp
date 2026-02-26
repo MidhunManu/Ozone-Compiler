@@ -91,16 +91,16 @@ public:
 				*/
 
 				std::optional<NodeTerm*> parse_term() {
-								if (peek().has_value() && peek().value().type == TokenType::int_lit) {
+								if (auto int_lit = try_consume(TokenType::int_lit)) {
 												auto term_int_literal = m_allocator.alloc<NodeTermIntLit>();
-												term_int_literal->int_lit = consume();
+												term_int_literal->int_lit = int_lit.value();
 												auto term = m_allocator.alloc<NodeTerm>();
 												term->var = term_int_literal;
 												return term;
 								}
-								else if (peek().has_value() && peek().value().type == TokenType::ident) {
+								else if (auto iden = try_consume(TokenType::ident)) {
 												auto expr_ident = m_allocator.alloc<NodeTermIdent>();
-												expr_ident->ident = consume();
+												expr_ident->ident = iden.value();
 												auto term = m_allocator.alloc<NodeTerm>();
 												term->var = expr_ident;
 												return term;
@@ -111,14 +111,13 @@ public:
 
 				std::optional<ExprNode*> parse_expr() {
 								if (auto term = parse_term()) {
-												if (peek().has_value() && peek().value().type == TokenType::plus) {
+												if (try_consume(TokenType::plus).has_value()) {
 																auto bin_expr = m_allocator.alloc<NodeBinExpr>();
 																auto bin_expr_add = m_allocator.alloc<BinExprAdd>();
 																auto lhs_expr = m_allocator.alloc<ExprNode>();
 																lhs_expr->var = term.value();
 																bin_expr_add->lhs = lhs_expr;
 
-																consume();
 																if (auto rhs = parse_expr()) {
 																				bin_expr_add->rhs = rhs.value();
 																				bin_expr->add = bin_expr_add;
@@ -232,6 +231,16 @@ inline std::optional<Token> peek(int ahead = 0) const {
 inline Token consume() {
 				return m_tokens.at(m_index++);
 }
+
+inline std::optional<Token> try_consume(TokenType type) {
+				if (peek().has_value() && peek().value().type == TokenType::semi) {
+								return consume();
+				} else {
+								return {};
+				}
+}
+
+
 const std::vector<Token> m_tokens;
 size_t m_index = 0;
 ArenaAllocator m_allocator;
