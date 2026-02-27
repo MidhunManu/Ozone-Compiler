@@ -136,10 +136,6 @@ public:
 												}
 								};
 
-								/*
-								StmtVisitor visitor({ .gen = this });
-								std::visit(visitor, stmt.var);
-								*/
 								StmtVisitor visitor{};
 								visitor.gen = this;
 								std::visit(visitor, stmt->var);

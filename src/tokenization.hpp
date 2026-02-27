@@ -5,7 +5,6 @@
 #include <cstdlib>
 #include <iostream>
 #include <optional>
-#include <random>
 #include <string>
 #include <vector>
 
@@ -28,26 +27,6 @@ struct Token {
 				TokenType type;
 				std::optional<std::string> value;
 };
-
-/*
-inline bool is_bin_opr(TokenType type) {
-				switch (type) {
-								case TokenType::plus:
-												return true;
-
-								case TokenType::mul:
-												return true;
-
-								case TokenType::sub:
-												return true;
-
-
-								default:
-												return false;
-
-				}
-}
-*/
 
 std::optional<int> bin_prec(TokenType type) {
 				switch (type) {

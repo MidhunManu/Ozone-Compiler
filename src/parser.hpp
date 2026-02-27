@@ -148,50 +148,6 @@ public:
 								auto expr_lhs = m_allocator.alloc<ExprNode>();
 								expr_lhs->var = term_lhs.value();
 
-								/*
-								while(true) {
-												std::optional<Token> current_tok = peek();
-												std::optional<int> prec;
-												if (!current_tok.has_value()) {
-																prec = bin_prec(current_tok->type);
-																if (!prec.has_value() || prec < min_prec) {
-																				break;
-																}
-												} else {
-																break;
-												}
-
-												int next_min_prec = prec.value() + 1;
-												auto expr_rhs = parse_expr(next_min_prec);
-
-												if (!expr_rhs.value()) {
-																std::cerr << "Can't parse expression, absent RHS expr" << std::endl;
-																exit(EXIT_FAILURE);
-												}
-
-												auto expr = m_allocator.alloc<NodeBinExpr>();
-												
-
-												Token op = consume();
-
-
-												if (op.type == TokenType::plus) {
-																auto add = m_allocator.alloc<BinExprAdd>();
-																add->lhs = expr_lhs;
-																add->rhs = expr_rhs.value();
-																expr->var = add;
-												}
-												else if (op.type == TokenType::mul) {
-																auto mul = m_allocator.alloc<BinExprMul>();
-																mul->lhs = expr_lhs;
-																mul->rhs = expr_rhs.value();
-																expr->var = mul;
-												}
-
-												expr_lhs->var = expr;
-								}
-								*/
-
 								while (true) {
 												std::optional<Token> current_tok = peek();
 												if (!current_tok.has_value()) break;
