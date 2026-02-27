@@ -55,8 +55,18 @@ struct BinExprMul {
 				ExprNode* rhs;
 };
 
+struct BinExprSub {
+				ExprNode* lhs;
+				ExprNode* rhs;
+};
+
+struct BinExprDiv {
+				ExprNode* lhs;
+				ExprNode* rhs;
+};
+
 struct NodeBinExpr {
-				std::variant<BinExprAdd*, BinExprMul*> var;
+				std::variant<BinExprAdd*, BinExprMul*, BinExprSub*, BinExprDiv*> var;
 };
 
 
@@ -186,11 +196,24 @@ public:
 																add->lhs = lhs_copy;
 																add->rhs = expr_rhs.value();
 																bin_expr->var = add;
-												} else if (op.type == TokenType::mul) {
+												} 
+												else if (op.type == TokenType::mul) {
 																auto mul = m_allocator.alloc<BinExprMul>();
 																mul->lhs = lhs_copy;
 																mul->rhs = expr_rhs.value();
 																bin_expr->var = mul;
+												}
+												else if (op.type == TokenType::sub) {
+																auto sub = m_allocator.alloc<BinExprSub>();
+																sub->lhs = lhs_copy;
+																sub->rhs = expr_rhs.value();
+																bin_expr->var = sub;
+												}
+												else if (op.type == TokenType::div) {
+																auto div = m_allocator.alloc<BinExprDiv>();
+																div->lhs = lhs_copy;
+																div->rhs = expr_rhs.value();
+																bin_expr->var = div;
 												}
 
 												expr_lhs->var = bin_expr;

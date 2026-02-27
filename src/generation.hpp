@@ -43,8 +43,8 @@ public:
 								struct BinExprAddVisitor {
 												Generator* gen;
 												void operator() (BinExprAdd* add) const {
-																gen->gen_expr(add->lhs);
 																gen->gen_expr(add->rhs);
+																gen->gen_expr(add->lhs);
 																gen->pop("rax");
 																gen->pop("rbx");
 																gen->m_output << "    add rax, rbx\n";
@@ -52,12 +52,31 @@ public:
 												}
 
 												void operator() (BinExprMul* mul) const {
-																gen->gen_expr(mul->lhs);
 																gen->gen_expr(mul->rhs);
+																gen->gen_expr(mul->lhs);
 																gen->pop("rax");
 																gen->pop("rbx");
 																gen->m_output << "    mul rbx\n";
 																gen->push("rax");
+												}
+
+												void operator() (BinExprSub* sub) const {
+																gen->gen_expr(sub->rhs);
+																gen->gen_expr(sub->lhs);
+																gen->pop("rax");
+																gen->pop("rbx");
+																gen->m_output << "    sub rax, rbx\n";
+																gen->push("rax");
+												}
+
+												void operator() (BinExprDiv* div) const {
+																gen->gen_expr(div->rhs);
+																gen->gen_expr(div->lhs);
+																gen->pop("rax");
+																gen->pop("rbx");
+																gen->m_output << "    div rbx\n";
+																gen->push("rax");
+
 												}
 								};
 
