@@ -20,7 +20,8 @@ enum class TokenType {
 				eq,
 				plus,
 				sub,
-				mul
+				mul,
+				div
 };
 
 struct Token {
@@ -52,7 +53,11 @@ std::optional<int> bin_prec(TokenType type) {
 				switch (type) {
 								case TokenType::plus:
 												return 0;
+								case TokenType::sub:
+												return 0;
 								case TokenType::mul:
+												return 1;
+								case TokenType::div:
 												return 1;
 								default:
 												return {};
@@ -133,6 +138,11 @@ public:
 												else if (peek().value() == '*') {
 																consume();
 																tokens.push_back({ .type = TokenType::mul });
+																continue;
+												}
+												else if (peek().value() == '/') {
+																consume();
+																tokens.push_back({ .type = TokenType::div });
 																continue;
 												}
 												else if(std::isspace(peek().value())) {
