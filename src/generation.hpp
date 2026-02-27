@@ -33,6 +33,10 @@ public:
 																gen->push(offset.str());
 
 												}
+
+												void operator() (const NodeTermParen* term_paren) const {
+																gen->gen_expr(term_paren->expr);
+												}
 								};
 
 								TermVisitor visitor({.gen = this});
