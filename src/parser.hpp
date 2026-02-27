@@ -11,6 +11,7 @@
 
 
 struct NodeBinExpr;
+struct NodeTermParen;
 
 struct NodeTermIntLit {
 				Token int_lit;
@@ -21,12 +22,18 @@ struct NodeTermIdent {
 };
 
 struct NodeTerm {
-				std::variant<NodeTermIntLit*, NodeTermIdent*> var;
+				std::variant<NodeTermIntLit*, NodeTermIdent*, NodeTermParen*> var;
 };
 
 struct ExprNode {
 				std::variant<NodeTerm*, NodeBinExpr*> var;
 };
+
+struct NodeTermParen {
+				ExprNode* expr;
+};
+
+
 
 struct StmtNodeExit {
 				ExprNode* expr;
@@ -111,7 +118,22 @@ public:
 												auto term = m_allocator.alloc<NodeTerm>();
 												term->var = expr_ident;
 												return term;
-								} else {
+								} 
+								else if (auto open_paren = try_consume(TokenType::open_paren)) {
+												auto expr = parse_expr();
+												if (!expr.value()) {
+																std::cerr << "expected expression" << std::endl;
+																exit(EXIT_FAILURE);
+												}
+
+												try_consume(TokenType::close_paren);
+												auto term_expr = m_allocator.alloc<NodeTermParen>();
+												term_expr->expr = expr.value();
+												auto term = m_allocator.alloc<NodeTerm>();
+												term->var = term_expr;
+												return term;
+								}
+								else {
 												return {};
 								}
 				}
