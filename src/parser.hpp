@@ -44,8 +44,16 @@ struct StmtNodeLet {
 				ExprNode* expr;
 };
 
+struct StmtNodeStdOut {
+				ExprNode* expr;
+};
+
+struct StmtNodeStdIn {
+				ExprNode* expr;
+};
+
 struct StmtNode {
-				std::variant<StmtNodeExit*, StmtNodeLet*> var;
+				std::variant<StmtNodeExit*, StmtNodeLet*, StmtNodeStdOut*> var;
 };
 
 struct ProgNode {
@@ -259,6 +267,38 @@ public:
 
 												auto* stmt = m_allocator.alloc<StmtNode>();
 												stmt->var = stmt_let;
+												return stmt;
+								}
+
+								else if (peek().has_value() && peek()->type == TokenType::std_out
+												&& peek(1).has_value() && peek(1)->type == TokenType::open_paren) {
+
+												consume(); // stdou
+												consume(); // (
+
+												auto* stmt_exit = m_allocator.alloc<StmtNodeStdOut>();
+
+												if (auto expr = parse_expr()) {
+																stmt_exit->expr = *expr;
+												} else {
+																std::cerr << "Invalid Expression\n";
+																std::exit(EXIT_FAILURE);
+												}
+
+												if (!peek().has_value() || peek()->type != TokenType::close_paren) {
+																std::cerr << "expected )\n";
+																std::exit(EXIT_FAILURE);
+												}
+												consume();
+
+												if (!peek().has_value() || peek()->type != TokenType::semi) {
+																std::cerr << "expected ;\n";
+																std::exit(EXIT_FAILURE);
+												}
+												consume();
+
+												auto* stmt = m_allocator.alloc<StmtNode>();
+												stmt->var = stmt_exit;
 												return stmt;
 								}
 

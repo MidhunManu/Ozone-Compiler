@@ -20,7 +20,9 @@ enum class TokenType {
 				plus,
 				sub,
 				mul,
-				div
+				div,
+				std_out,
+				std_in
 };
 
 struct Token {
@@ -67,7 +69,18 @@ public:
 																				tokens.push_back({ .type = TokenType::let });
 																				buffer.clear();
 																				continue;
-																} else {
+																} 
+																else if (buffer == "stdout") {
+																				tokens.push_back({ .type = TokenType::std_out });
+																				buffer.clear();
+																				continue;
+																}
+																else if (buffer == "stdin") {
+																				tokens.push_back({ .type = TokenType::std_in });
+																				buffer.clear();
+																				continue;
+																}
+																else {
 																				tokens.push_back({ .type = TokenType::ident, .value = buffer });
 																				buffer.clear();
 																				continue;

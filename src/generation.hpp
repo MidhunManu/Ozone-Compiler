@@ -134,6 +134,27 @@ public:
 
 																gen->gen_expr(stmt_let->expr);
 												}
+
+												void operator() (const StmtNodeStdOut* stmt_std_out) {
+																/*
+																gen->gen_expr(stmt_std_out->expr);
+																gen->m_output << "    mov rax, 60\n";
+
+																gen->pop("rdi");
+																gen->m_output << "    syscall\n";
+																*/
+
+																gen->gen_expr(stmt_std_out->expr);
+																gen->pop("rdi");
+																gen->m_output << "    call print_u64\n";
+																// missing! add these:
+																gen->m_output << "    mov rax, 1\n";
+																gen->m_output << "    mov rdi, 1\n";
+																gen->m_output << "    lea rsi, [newline]\n";
+																gen->m_output << "    mov rdx, 1\n";
+																gen->m_output << "    syscall\n";
+																gen->m_uses_print = true;
+												}
 								};
 
 								StmtVisitor visitor{};
@@ -142,8 +163,13 @@ public:
 				}
 
 				[[nodiscard]] inline std::string gen_prog() {
+								/*
+								if (m_uses_print) {
+												m_output << run_time_print();
+								}
+
 								m_output << "global _start\n_start:\n";
-								
+
 								for(auto stmt: m_prog.statements) {
 												gen_stmt(stmt);	
 								}
@@ -154,9 +180,27 @@ public:
 
 
 								return m_output.str();
+								*/
+								m_output << "global _start\n_start:\n";
+
+								for(auto stmt: m_prog.statements) {
+												gen_stmt(stmt);	
+								}
+
+								m_output << "    mov rax, 60\n";
+								m_output << "    mov rdi, 0\n"; 
+								m_output << "    syscall\n";
+
+								if(m_uses_print) {
+												return run_time_print() + m_output.str();
+								}
+
+								return m_output.str();
 				}
 
 private:
+				bool m_uses_print = false;
+
 				inline void push(const std::string& reg) {
 								m_output << "    push " << reg << "\n";
 								m_stack_size++;
@@ -165,6 +209,48 @@ private:
 				inline void pop(const std::string& reg) {
 								m_output << "    pop " << reg << "\n";
 								m_stack_size--;
+				}
+
+				static std::string run_time_print() {
+								std::stringstream ss;
+								ss << "    default rel\n";
+								ss << "    section .data\n";
+								ss << "    print_buf: times 32 db 0\n";
+								ss << "    newline: db 10\n";          // <-- added
+								ss << "\n";
+								ss << "    section .text\n";
+								ss << "    print_u64:\n";
+								ss << "        lea rsi, [print_buf + 31]\n";
+								ss << "        xor rcx, rcx\n";
+								ss << "\n";
+								ss << "        mov rax, rdi\n";
+								ss << "        cmp rax, 0\n";
+								ss << "        jne .loop\n";
+								ss << "\n";
+								ss << "        mov byte [rsi], '0'\n";
+								ss << "        mov rcx, 1\n";
+								ss << "        jmp .write\n";
+								ss << "\n";
+								ss << "    .loop:\n";
+								ss << "        xor rdx, rdx\n";
+								ss << "        mov rbx, 10\n";
+								ss << "        div rbx\n";
+								ss << "        add dl, '0'\n";
+								ss << "        mov [rsi], dl\n";
+								ss << "        dec rsi\n";
+								ss << "        inc rcx\n";
+								ss << "        test rax, rax\n";
+								ss << "        jne .loop\n";
+								ss << "\n";
+								ss << "        inc rsi\n";
+								ss << "\n";
+								ss << "    .write:\n";
+								ss << "        mov rax, 1\n";
+								ss << "        mov rdi, 1\n";
+								ss << "        mov rdx, rcx\n";
+								ss << "        syscall\n";
+								ss << "        ret\n";
+								return ss.str();
 				}
 
 				struct Var {
